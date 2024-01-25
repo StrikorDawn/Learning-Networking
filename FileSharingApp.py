@@ -1,90 +1,93 @@
 import socket
-import tkinter as tk
-from tkinter import filedialog
-from threading import Thread
-# This is to get the file to commit to Github
-def receive_file(client_socket, file_name):
-    with open(file_name, 'wb') as file:
-        data = client_socket.recv(1024)
-        while data:
-            file.write(data)
-            data = client_socket.recv(1024)
 
-def send_file(file_path, server_address):
-    with socket.create_connection(server_address) as client_socket:
-        file_name = file_path.split("/")[-1]
-
-        # Send the file name
-        client_socket.sendall(file_name.encode("utf-8"))
-
-        # Send the file content in chunks
-        with open(file_path, 'rb') as file:
-            data = file.read(1024)
-            while data:
-                client_socket.sendall(data)
-                data = file.read(1024)
-
-    print(f"File '{file_name}' sent successfully.")
-
-def server_thread(server_socket):
-    client_socket, client_address = server_socket.accept()
-    print(f"Accepted connection from {client_address}")
-
-    file_name = client_socket.recv(1024).decode("utf-8")
-    print(f"Receiving file: {file_name}")
-
-    receive_file(client_socket, file_name)
-
-    print(f"File received successfully.")
-
-def start_server(host, port):
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((host, port))
-    server_socket.listen()
-
-    print(f"Server listening on {host}:{port}")
-
-    return server_socket
-
-def on_send_button_click(file_path, server_address):
-    Thread(target=lambda: send_file(file_path, server_address)).start()
-
-def on_select_file_button_click(entry):
-    file_path = filedialog.askopenfilename()
-    entry.delete(0, tk.END)
-    entry.insert(0, file_path)
+IP = socket.gethostbyname(socket.gethostname())
+PORT = 12345
+ADDR = (IP, PORT)
+FORMAT = "utf-8"
+SIZE = 1024
+sFile = "Send\Test.txt"
+destination = "Recieve\\"
 
 def main():
-    window = tk.Tk()
-    window.title("File Sharing GUI")
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect(ADDR)
 
-    host_label = tk.Label(window, text="Server Host:")
-    host_label.grid(row=0, column=0)
+    file = open("data/test.txt", "r")
+    data = file.read()
 
-    host_entry = tk.Entry(window)
-    host_entry.grid(row=0, column=1)
+    client.send("test.txt".encode(FORMAT))
+    msg = client.recv(SIZE).decode(FORMAT)
+    print(f"[SERVER]: {msg}")
+import socket
 
-    port_label = tk.Label(window, text="Server Port:")
-    port_label.grid(row=1, column=0)
+IP = socket.gethostbyname(socket.gethostname())
+PORT = 12345
+ADDR = (IP, PORT)
+FORMAT = "utf-8"
+SIZE = 2048
 
-    port_entry = tk.Entry(window)
-    port_entry.grid(row=1, column=1)
 
-    file_label = tk.Label(window, text="Select File:")
-    file_label.grid(row=2, column=0)
+def main():
+    print("The revieving side needs to start their program first.")
+    print("1. Recieve File")
+    print("2. Send File")
+    Select()
 
-    file_entry = tk.Entry(window)
-    file_entry.grid(row=2, column=1)
+def Select():
+    option = int(input("Are you sending or receiving a file? "))
+    if option == 1:
+        ReciveFile()
+    elif option == 2:
+        SendFile()
+    else:
+        print("Please input valid option. (1 or 2)")
+        Select()
 
-    select_file_button = tk.Button(window, text="Select File", command=lambda: on_select_file_button_click(file_entry))
-    select_file_button.grid(row=2, column=2)
+def ReciveFile():
+    print("[STARTING] Server is starting...")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print(f"Give this to the Sender: {IP}")
+    server.bind(ADDR)
+    server.listen()
+    print("[LISTENING] Server is listening...")
 
-    send_button = tk.Button(window, text="Send File", command=lambda: on_send_button_click(file_entry.get(), (host_entry.get(), int(port_entry.get()))))
-    send_button.grid(row=3, column=0, columnspan=3)
+    while True:
+        conn, addr = server.accept()
+        print(f"[NEW CONNECTION] {addr} connected.")
 
-    window.mainloop()
+        filename = conn.recv(SIZE).encode(FORMAT)
+        print(f"[RECV] {filename} Recieved")
+        file = open(f"Recieve\{filename}", 'w')
+        conn.send(f"{filename} received".encode(FORMAT))
+
+        data = conn.recv(SIZE).decode(FORMAT)
+        print(f"[RECV] File data received.")
+        file.write(data)
+        conn.send("File data received.".encode(FORMAT))
+
+        file.close()
+        conn.close()
+        print(f"[DISCONNECTED] {addr} disconnected")
+
+def SendFile():
+    Host = input("What is the Host's IP: ")
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect(ADDR)
+
+    file = open(sFile, "r")
+    data = file.read()
+
+    client.send("test.txt".encode(FORMAT))
+    msg = client.recv(SIZE).decode(FORMAT)
+    print(f"[SERVER]: {msg}")
+
+    client.send(data.encode(FORMAT))
+    msg = client.recv(SIZE).decode(FORMAT)
+    print(f"[SERVER]: {msg}")
+
+    file.close()
+    client.close()
+    
 
 if __name__ == "__main__":
-    server_socket = start_server("localhost", 12345)
-    Thread(target=lambda: server_thread(server_socket)).start()
     main()
