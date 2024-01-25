@@ -55,7 +55,7 @@ def ReciveFile():
         conn, addr = server.accept()
         print(f"[NEW CONNECTION] {addr} connected.")
 
-        filename = conn.recv(SIZE).encode(FORMAT)
+        filename = conn.recv(SIZE).decode(FORMAT)
         print(f"[RECV] {filename} Recieved")
         file = open(f"Recieve\{filename}", 'w')
         conn.send(f"{filename} received".encode(FORMAT))
