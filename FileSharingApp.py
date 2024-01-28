@@ -5,7 +5,7 @@ PORT = 12345
 ADDR = (IP, PORT)
 FORMAT = "utf-8"
 #Size limit for the files being transered
-SIZE = 1024
+SIZE = 1`024
 # Variables for Configuration
 # Will utilize them more in the future for GUI implimentation.
 sFile = "Send\Test.txt"
